@@ -3,6 +3,10 @@
 ![Status](https://img.shields.io/badge/Status-Active-success)
 ![Platform](https://img.shields.io/badge/Platform-Google%20Apps%20Script-blue)
 
+![Preview Aplikasi](assets/Dashboard 1.png)
+
+
+
 ## 📖 Deskripsi
 Aplikasi web berbasis **Google Apps Script** (Serverless) yang dirancang untuk mengelola dana sosial (Ta'awun). Aplikasi ini mengubah Google Spreadsheet menjadi database yang aman, dilengkapi dengan antarmuka (UI) modern untuk input data dan dashboard real-time.
 
@@ -44,3 +48,4 @@ Pull Request dipersilakan. Untuk perubahan besar, harap buka issue terlebih dahu
 
 ## 📝 Lisensi
 [MIT License](LICENSE)
+
