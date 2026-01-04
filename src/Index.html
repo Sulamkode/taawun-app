@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+    #loading { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 50; align-items: center; justify-content: center; }
+    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .fade-in { animation: fadeIn 0.4s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+
+<body class="p-4 md:p-8">
+
+  <div id="viewInput" class="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden fade-in relative">
+    <div class="bg-blue-600 p-6 text-center">
+      <img src="https://drive.google.com/uc?export=view&id=ID_GAMBAR_DISINI" 
+           onerror="this.style.display='none'" 
+           class="h-16 w-16 mx-auto mb-3 rounded-full bg-white p-1 shadow-md object-cover">
+      <h1 class="text-white text-xl font-bold">Input Ta'awun</h1>
+      <p class="text-blue-100 text-sm mt-1 mb-4">Input Data Baru</p>
+       <div class="bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
+         <p class="text-blue-100 text-[10px] uppercase">Saldo Saat Ini</p>
+         <p id="saldoHeader" class="text-white font-mono font-bold">Loading...</p>
+       </div>
+    </div>
+
+    <form id="taawunForm" class="p-6 space-y-4">
+       <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase">Periode</label>
+          <input type="date" name="periode" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase">Tgl Transaksi</label>
+          <input type="date" name="tglTransaksi" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase">Arus Dana</label>
+        <select id="inOut" name="inOut" onchange="updateFormLogic()" class="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 font-bold text-gray-700">
+          <option value="IN" class="text-green-600">IN (Pemasukan)</option>
+          <option value="OUT" class="text-red-600">OUT (Pengeluaran)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase">Jenis Transaksi</label>
+        <select id="jenis" name="jenis" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <option value="" disabled selected>Loading...</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase">Nama Peserta</label>
+        <select id="nama" name="nama" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <option value="" disabled selected>Loading...</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase">Nominal (Rp)</label>
+        <input type="number" name="nominal" required placeholder="0" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-lg font-semibold">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase">Deskripsi</label>
+        <textarea name="deskripsi" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase">Lampiran</label>
+        <input type="file" id="fileInput" accept="image/*,application/pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700"/>
+      </div>
+      <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-700 shadow-lg transition transform active:scale-95">SIMPAN DATA</button>
+    </form>
+    <div id="statusMessage" class="hidden p-4 text-center text-sm font-semibold"></div>
+    <div class="h-32 w-full"></div> 
+  </div>
+
+  <div id="viewDashboard" class="hidden max-w-md mx-auto space-y-4 fade-in">
+    
+    <div class="grid grid-cols-1 gap-4">
+      <div class="bg-blue-600 rounded-2xl p-6 shadow-lg text-white relative overflow-hidden">
+        <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10"></div>
+        <h2 class="text-blue-100 text-xs font-bold uppercase tracking-wide">Saldo Kas (On Hand)</h2>
+        <h1 id="dashBalance" class="text-3xl font-bold mt-1">Rp 0</h1>
+        <p class="text-xs text-blue-200 mt-2 flex items-center gap-1"><i class="ph-fill ph-wallet"></i> Dana siap pakai</p>
+      </div>
+      <div class="bg-orange-500 rounded-2xl p-6 shadow-lg text-white relative overflow-hidden">
+        <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10"></div>
+        <h2 class="text-orange-100 text-xs font-bold uppercase tracking-wide">Total Piutang Anggota</h2>
+        <h1 id="dashPiutang" class="text-3xl font-bold mt-1">Rp 0</h1>
+        <p class="text-xs text-orange-200 mt-2 flex items-center gap-1"><i class="ph-fill ph-hand-coins"></i> Dana dipinjam anggota</p>
+      </div>
+    </div>
+
+    
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-orange-100">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xs font-bold text-orange-600 uppercase">Rincian Sisa Piutang</h3>
+        <span class="text-[10px] bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-bold">Belum Lunas</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="text-xs text-gray-400 uppercase border-b">
+            <tr><th class="py-2 font-medium">Nama Anggota</th><th class="py-2 font-medium text-right">Sisa Hutang</th></tr>
+          </thead>
+          <tbody id="piutangListTable" class="divide-y divide-gray-100">
+             <tr><td colspan="2" class="py-4 text-center text-gray-400 text-xs">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-green-50 rounded-2xl p-4 border border-green-100">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-2 h-2 rounded-full bg-green-500"></div>
+          <span class="text-xs font-bold text-green-700 uppercase">Total Masuk</span>
+        </div>
+        <p id="dashIn" class="text-lg font-bold text-green-800">Rp 0</p>
+      </div>
+      <div class="bg-red-50 rounded-2xl p-4 border border-red-100">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-2 h-2 rounded-full bg-red-500"></div>
+          <span class="text-xs font-bold text-red-700 uppercase">Total Keluar</span>
+        </div>
+        <p id="dashOut" class="text-lg font-bold text-red-800">Rp 0</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm">
+      <h3 class="text-xs font-bold text-gray-500 uppercase mb-4">Perbandingan Arus Kas</h3>      
+      <div class="relative h-64 w-full">
+        <canvas id="myChart"></canvas>
+      </div>    
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-blue-50">
+      <h3 class="text-xs font-bold text-gray-500 uppercase mb-4">Pemanfaatan Dana</h3>
+      <p class="text-[10px] text-gray-400 mb-2">Pinjaman 0% vs Kesehatan (Persentase)</p>
+      <div class="relative h-64 w-full">
+        <canvas id="utilizationChart"></canvas>
+      </div>    
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-blue-100">
+      <h3 class="text-xs font-bold text-blue-600 uppercase mb-3">Laporan Sedekah Rutin</h3>
+      
+      <div class="flex gap-2 mb-4">
+        <select id="filterBulan" class="w-1/2 p-2 border border-gray-300 rounded-lg text-sm bg-gray-50">
+          <option value="1">Januari</option>
+          <option value="2">Februari</option>
+          <option value="3">Maret</option>
+          <option value="4">April</option>
+          <option value="5">Mei</option>
+          <option value="6">Juni</option>
+          <option value="7">Juli</option>
+          <option value="8">Agustus</option>
+          <option value="9">September</option>
+          <option value="10">Oktober</option>
+          <option value="11">November</option>
+          <option value="12">Desember</option>
+        </select>
+        <input type="number" id="filterTahun" class="w-1/3 p-2 border border-gray-300 rounded-lg text-sm bg-gray-50 text-center" placeholder="Tahun">
+        <button onclick="loadSedekahReport()" class="w-auto px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+          <i class="ph-bold ph-magnifying-glass"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        
+        <div class="bg-green-50 rounded-lg p-2">
+          <div class="flex items-center gap-1 mb-2 pb-1 border-b border-green-200">
+             <div class="w-2 h-2 rounded-full bg-green-500"></div>
+             <span class="text-[10px] font-bold text-green-700 uppercase">Sudah Sedekah</span>
+          </div>
+          <div id="listPaid" class="space-y-2 max-h-40 overflow-y-auto">
+             <p class="text-xs text-gray-400 italic text-center py-2">Klik tombol cari...</p>
+          </div>
+        </div>
+
+        <div class="bg-red-50 rounded-lg p-2">
+           <div class="flex items-center gap-1 mb-2 pb-1 border-b border-red-200">
+             <div class="w-2 h-2 rounded-full bg-red-500"></div>
+             <span class="text-[10px] font-bold text-red-700 uppercase">Belum Sedekah</span>
+          </div>
+          <div id="listUnpaid" class="space-y-1 max-h-40 overflow-y-auto">
+             <p class="text-xs text-gray-400 italic text-center py-2">Klik tombol cari...</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm">
+      <h3 class="text-xs font-bold text-gray-500 uppercase mb-4">5 Transaksi Terakhir</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <tbody id="historyTable" class="divide-y divide-gray-100">
+            <tr><td class="py-2 text-center text-gray-400">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="h-32 w-full"></div>
+  </div>
+
+  <div class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 py-3 px-6 flex justify-around items-center z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+    <button onclick="switchTab('input')" id="navInput" class="flex flex-col items-center gap-1 text-blue-600 w-16 transition"><i class="ph ph-plus-circle text-2xl"></i><span class="text-[10px] font-bold">Input</span></button>
+    <button onclick="switchTab('dashboard')" id="navDashboard" class="flex flex-col items-center gap-1 text-gray-400 w-16 transition"><i class="ph ph-chart-pie-slice text-2xl"></i><span class="text-[10px] font-bold">Laporan</span></button>
+  </div>
+
+  <div id="loading"><div class="flex flex-col items-center"><div class="spinner mb-2"></div><span class="text-gray-600">Processing...</span></div></div>
+
+  <script>
+    let masterData = {}; 
+    let myChart = null;         
+    let utilizationChart = null; 
+
+    window.onload = function() {
+      const today = new Date();
+      // Set input tanggal ke hari ini
+      const dateStr = today.toISOString().split('T')[0];
+      document.querySelector('[name="periode"]').value = dateStr;
+      document.querySelector('[name="tglTransaksi"]').value = dateStr;
+
+      // Set default filter tahun ke tahun ini, bulan ini
+      document.getElementById('filterTahun').value = today.getFullYear();
+      document.getElementById('filterBulan').value = today.getMonth() + 1;
+
+      google.script.run.withSuccessHandler(populateDropdowns).getDropdownData();
+      refreshSaldoHeader();
+    };
+
+    function switchTab(tabName) {
+      const inputView = document.getElementById('viewInput');
+      const dashView = document.getElementById('viewDashboard');
+      const navInput = document.getElementById('navInput');
+      const navDash = document.getElementById('navDashboard');
+      window.scrollTo(0,0);
+      if (tabName === 'input') {
+        inputView.classList.remove('hidden'); dashView.classList.add('hidden');
+        navInput.className = "flex flex-col items-center gap-1 text-blue-600 w-16 transition";
+        navDash.className = "flex flex-col items-center gap-1 text-gray-400 w-16 transition";
+        refreshSaldoHeader();
+      } else {
+        inputView.classList.add('hidden'); dashView.classList.remove('hidden');
+        navInput.className = "flex flex-col items-center gap-1 text-gray-400 w-16 transition";
+        navDash.className = "flex flex-col items-center gap-1 text-blue-600 w-16 transition";
+        loadDashboardData();
+      }
+    }
+
+    function loadDashboardData() {
+      document.getElementById('dashBalance').innerText = "Loading...";
+      google.script.run.withSuccessHandler(renderDashboard).getDashboardData();
+    }
+
+    // --- LOGIC BARU: LOAD SEDEKAH REPORT ---
+    function loadSedekahReport() {
+      const bln = document.getElementById('filterBulan').value;
+      const thn = document.getElementById('filterTahun').value;
+      
+      if(!thn) { alert("Mohon isi tahun terlebih dahulu"); return; }
+      
+      // Tampilkan Loading di dalam list
+      document.getElementById('listPaid').innerHTML = '<p class="text-xs text-gray-400 animate-pulse text-center py-2">Sedang mengecek...</p>';
+      document.getElementById('listUnpaid').innerHTML = '<p class="text-xs text-gray-400 animate-pulse text-center py-2">Sedang mengecek...</p>';
+      
+      google.script.run.withSuccessHandler(renderSedekahReport).getSedekahReport(bln, thn);
+    }
+
+    function renderSedekahReport(data) {
+       const fmt = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+       const divPaid = document.getElementById('listPaid');
+       const divUnpaid = document.getElementById('listUnpaid');
+       
+       divPaid.innerHTML = '';
+       divUnpaid.innerHTML = '';
+
+       // RENDER SUDAH BAYAR
+       if (data.paid.length === 0) {
+         divPaid.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">Belum ada data.</p>';
+       } else {
+         data.paid.forEach(item => {
+           divPaid.innerHTML += `
+             <div class="flex justify-between items-start border-b border-green-100 last:border-0 py-1">
+               <span class="text-xs text-gray-700 font-medium">${item.nama}</span>
+               <span class="text-[10px] text-green-600 font-bold bg-green-100 px-1 rounded">${fmt(item.nominal)}</span>
+             </div>
+           `;
+         });
+       }
+
+       // RENDER BELUM BAYAR
+       if (data.unpaid.length === 0) {
+         divUnpaid.innerHTML = '<p class="text-xs text-green-500 text-center py-2 font-bold">Semua Lunas! 🎉</p>';
+       } else {
+         data.unpaid.forEach(item => {
+           divUnpaid.innerHTML += `
+             <div class="border-b border-red-100 last:border-0 py-1">
+               <span class="text-xs text-gray-500">${item.nama}</span>
+             </div>
+           `;
+         });
+       }
+    }
+
+    function renderDashboard(data) {
+      const fmt = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+
+      document.getElementById('dashBalance').innerText = fmt(data.balance);
+      document.getElementById('dashPiutang').innerText = fmt(data.piutang);
+      document.getElementById('dashIn').innerText = fmt(data.totalIn);
+      document.getElementById('dashOut').innerText = fmt(data.totalOut);
+
+      const tablePiutang = document.getElementById('piutangListTable');
+      tablePiutang.innerHTML = '';
+      if (data.rincianPiutang.length === 0) {
+        tablePiutang.innerHTML = '<tr><td colspan="2" class="py-4 text-center text-green-600 text-xs font-semibold">✨ Alhamdulillah, tidak ada tunggakan.</td></tr>';
+      } else {
+        data.rincianPiutang.forEach(item => {
+          tablePiutang.innerHTML += `<tr><td class="py-3 font-semibold text-gray-700">${item.nama}</td><td class="py-3 text-right font-bold text-orange-600">${fmt(item.sisa)}</td></tr>`;
+        });
+      }
+
+      const tbody = document.getElementById('historyTable');
+      tbody.innerHTML = ''; 
+      if (data.history.length === 0) {
+        tbody.innerHTML = '<tr><td class="py-4 text-center text-gray-400 text-xs">Belum ada data transaksi.</td></tr>';
+      } else {
+        data.history.forEach(row => {
+          const colorClass = row.inOut === 'IN' ? 'text-green-600' : 'text-red-600';
+          const sign = row.inOut === 'IN' ? '+' : '-';
+          tbody.innerHTML += `<tr><td class="py-3 pr-2"><p class="font-bold text-gray-800 text-xs">${row.nama}</p><p class="text-[10px] text-gray-500">${row.tgl} • ${row.jenis}</p></td><td class="py-3 text-right font-bold text-xs ${colorClass}">${sign} ${fmt(row.nominal)}</td></tr>`;
+        });
+      }
+
+      const ctx = document.getElementById('myChart').getContext('2d');
+      if (myChart) myChart.destroy();
+      myChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Pemasukan', 'Pengeluaran'],
+          datasets: [{ data: [data.totalIn, data.totalOut], backgroundColor: ['#22c55e', '#ef4444'], borderWidth: 0 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, layout: { padding: 20 },
+          plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 20 } } }
+        }
+      });
+
+      const ctx2 = document.getElementById('utilizationChart').getContext('2d');
+      if (utilizationChart) utilizationChart.destroy();
+      utilizationChart = new Chart(ctx2, {
+        type: 'pie',
+        data: {
+          labels: ['Pinjaman 0%', 'Kesehatan'],
+          datasets: [{
+            data: [data.utilization.pinjaman, data.utilization.kesehatan], 
+            backgroundColor: ['#f97316', '#3b82f6'], 
+            borderWidth: 1,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false, 
+          layout: { padding: 20 },
+          plugins: { 
+            legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 20 } },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.label || '';
+                  if (label) label += ': ';
+                  let value = context.raw;
+                  let total = context.chart._metasets[context.datasetIndex].total;
+                  let percentage = 0;
+                  if(total > 0) percentage = (value / total * 100).toFixed(1);
+                  return label + percentage + '%';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function refreshSaldoHeader() { 
+      google.script.run.withSuccessHandler(function(saldo) { 
+        const fmt = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(saldo); document.getElementById('saldoHeader').innerText = fmt; }
+        ).getCurrentBalance(); 
+        }
+
+    function populateDropdowns(data) { 
+      masterData = data; const namaSelect = document.getElementById('nama'); namaSelect.innerHTML = '<option value="" disabled selected>Pilih Nama...</option>'; data.names.forEach(name => { let opt = document.createElement('option'); opt.value = name; opt.text = name; namaSelect.add(opt); }); updateFormLogic(); }
+    function updateFormLogic() { const inOut = document.getElementById('inOut').value; const jenisSelect = document.getElementById('jenis'); jenisSelect.innerHTML = '<option value="" disabled selected>Pilih Jenis...</option>'; const options = inOut === "IN" ? masterData.typesIn : masterData.typesOut; options.forEach(type => { let opt = document.createElement('option'); opt.value = type; opt.text = type; jenisSelect.add(opt); }); }
+    document.getElementById('taawunForm').addEventListener('submit', function(e) { e.preventDefault(); document.getElementById('loading').style.display = 'flex'; const form = this; const fileInput = document.getElementById('fileInput'); const formData = { periode: form.periode.value, tglTransaksi: form.tglTransaksi.value, inOut: form.inOut.value, jenis: form.jenis.value, nama: form.nama.value, nominal: form.nominal.value, deskripsi: form.deskripsi.value, fileName: '', fileData: '', mimeType: '' }; if (fileInput.files.length > 0) { const file = fileInput.files[0]; const reader = new FileReader(); reader.onload = function(e) { formData.fileData = e.target.result.split(',')[1]; formData.fileName = file.name; formData.mimeType = file.type; sendData(formData); }; reader.readAsDataURL(file); } else { sendData(formData); } });
+    function sendData(data) { google.script.run.withSuccessHandler(function(response) { document.getElementById('loading').style.display = 'none'; const statusDiv = document.getElementById('statusMessage'); statusDiv.classList.remove('hidden'); if (response.success) { statusDiv.innerText = response.message; statusDiv.className = "p-4 text-center text-sm font-semibold text-green-600 bg-green-50 rounded-lg"; document.getElementById('taawunForm').reset(); refreshSaldoHeader(); const today = new Date().toISOString().split('T')[0]; document.querySelector('[name="periode"]').value = today; document.querySelector('[name="tglTransaksi"]').value = today; } else { statusDiv.innerText = response.message; statusDiv.className = "p-4 text-center text-sm font-semibold text-red-600 bg-red-50 rounded-lg"; } setTimeout(() => { statusDiv.classList.add('hidden'); }, 4000); }).processForm(data); }
+  </script>
+</body>
+</html>
