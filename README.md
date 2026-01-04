@@ -1,10 +1,12 @@
 # 🤝 Sistem Manajemen Dana Ta'awun (Social Safety Net)
 
-![Preview Aplikas](assets/Dashboard 1.png)
 ![Status](https://img.shields.io/badge/Status-Active-success)
 ![Platform](https://img.shields.io/badge/Platform-Google%20Apps%20Script-blue)
 
-
+![Preview Aplikas](assets/Input1.png)
+![Preview Aplikas](assets/Dashboard1.png)
+![Preview Aplikas](assets/Dashboard2.png)
+![Preview Aplikas](assets/Dashboard3.png)
 
 ## 📖 Deskripsi
 Aplikasi web berbasis **Google Apps Script** (Serverless) yang dirancang untuk mengelola dana sosial (Ta'awun). Aplikasi ini mengubah Google Spreadsheet menjadi database yang aman, dilengkapi dengan antarmuka (UI) modern untuk input data dan dashboard real-time.
@@ -47,5 +49,6 @@ Pull Request dipersilakan. Untuk perubahan besar, harap buka issue terlebih dahu
 
 ## 📝 Lisensi
 [MIT License](LICENSE)
+
 
 
