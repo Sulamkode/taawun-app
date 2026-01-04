@@ -1,9 +1,8 @@
 # 🤝 Sistem Manajemen Dana Ta'awun (Social Safety Net)
 
+![Preview Aplikas](assets/Dashboard 1.png)
 ![Status](https://img.shields.io/badge/Status-Active-success)
 ![Platform](https://img.shields.io/badge/Platform-Google%20Apps%20Script-blue)
-
-![Preview Aplikasi](assets/Dashboard 1.png)
 
 
 
@@ -48,4 +47,5 @@ Pull Request dipersilakan. Untuk perubahan besar, harap buka issue terlebih dahu
 
 ## 📝 Lisensi
 [MIT License](LICENSE)
+
 
